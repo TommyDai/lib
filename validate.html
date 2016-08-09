@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>checkform.html
+<body>
+    <form action="">
+
+        <p>用户名:　<input type="text" name="username">　<span></span></p>
+        <p>密　码:　<input type="text" name="password">　<span></span></p>
+        <p>邮　箱:　<input type="text" name="email">　<span></span></p>
+        <p>手　机:　<input type="text" name="phone">　<span></span></p>
+        <p><button>提交</button></p>
+
+    </form>
+</body>
+</html>
+
+<script src="./jquery.min2.14.js"></script>
+<script type="text/javascript">
+
+    //定义需要ajax验证的表单
+    function needAjax()
+    {
+        return [
+            'username',
+            'email',
+            'phone'
+        ];
+    }
+
+    //定义ajax验证提示信息(请和上面的一一对应)
+    function tipAjax()
+    {
+        return [
+            '该用户名已被使用请更换',
+            '该邮箱已被使用请更换',
+            '该手机号已被使用请更换'
+        ];
+    }
+
+    //批量绑定事件
+    $('input').bind('blur',function(){
+        check($(this),$(this).val());
+    });
+
+    //通用验证函数
+    function check(input,value)
+    {
+        //验证规则
+        var username = /\w{6,16}/;
+        var password = /\S{6,18}/;
+        var email    = /\w+@\w+(\.\w+)+/;
+        var phone    = /^1\d{10}$/;
+
+        //验证操作
+        var preg = eval(input.attr('name'));
+        var res = preg.test(value);
+
+        //调用验证提示信息
+        var tip = checkTip(input,res);
+
+        //ajax验证
+        if(tip) checkAjax(input,value);
+    }
+
+    //Ajax提交验证
+    function checkAjax(input,value)
+    {
+        //获取验证列表
+        var list = needAjax();
+        var name = input.attr('name');
+
+        //获取验证提示信息
+        var tip = tipAjax();
+
+        //异步提交验证
+        var isAjax = $.inArray(name,list);
+        if(isAjax > -1){
+            $.post('login.php', {input:name,value:value}, function(d){
+                switch(parseInt(d)){
+                    case 1:
+                        input.attr('isCheck',1);
+                        break;
+                    case 0:
+                        input.attr('isCheck',0);
+                        input.next().text(tip[isAjax]);
+                        input.next().css('color','red');
+                        break;
+                }
+            });
+        }
+    }
+
+    //正则验证提示信息
+    function checkTip(input,res)
+    {
+        //验证失败后的提示信息
+        var username = '用户名必须为6-16位的字母数字下划线';
+        var password = '密码必须为6-18位非空字符';
+        var email    = '邮箱格式不正确 例:bobo@gmail.com';
+        var phone    = '手机号码有误';
+
+        //设置验证标识显示提示信息
+        if(res){
+            input.attr('isCheck',1);
+            input.next().html('<b style="color:green">可以使用</b>');
+            return true;
+        }else{
+            input.attr('isCheck',0);
+            input.next().text(eval(input.attr('name')));
+            input.next().css('color','red');
+            return false;
+        }
+    }
+
+    //提交按钮处理
+    $('button').click(function(){
+        var res = true;
+        $('input').each(function(){
+            if(!$(this).attr('isCheck') || $(this).attr('isCheck')==0){
+                res = false;
+                check($(this),$(this).val());
+                return;
+            }
+        });
+        return res;          
+    });
+
+
+</script>
